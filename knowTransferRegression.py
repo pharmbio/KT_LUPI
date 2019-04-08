@@ -7,10 +7,10 @@ import utils as util
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
 from sklearn.kernel_ridge import KernelRidge
-import statsmodels.api as sm
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import KFold
 from sklearn.gaussian_process.kernels import PairwiseKernel
+from prettytable import PrettyTable
 
 
 # fit SVR
@@ -56,10 +56,11 @@ def KT_LUPI_GPR(X_train, y_train, x_star, X_test):
 
 # fit LUPI with feature transformation using kernel ridge,
 def fit_KRR(X_train, x_star):
-    param_grid = {"alpha": [1e-3, 1e-4, 1e-5, 1e-6],
-                  'kernel': ['rbf'], 'gamma': [1e-3, 1e-4, 1e-5, 1e-6]}
+    param_grid = {"alpha": [1e-3, 1e-4, 1e-5, 1e-6, 1e-7],
+                  'kernel': ['rbf'], 'gamma': [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6]}
     model= GridSearchCV(KernelRidge(), cv=5, param_grid=param_grid)
     model.fit(X_train, x_star)
+    #print(model.best_estimator_.get_params())
     return model
 
 # fit LUPI with feature transformation using Gaussian process regression
@@ -96,7 +97,7 @@ def KT_LUPI(X_train, y_train, x_star, X_test, regMethod='KRR'):
 
 
 
-def RobustKT_LUPI(X_train, X_star, y_train, X_test, regMethod = 'KRR', n_splits=3):
+def RobustKT_LUPI(X_train, X_star, y_train, X_test, regMethod = 'KRR', n_splits=5):
 
     kf = KFold(n_splits=n_splits)
     testPred = np.zeros(len(X_test))
@@ -135,46 +136,59 @@ def RobustKT_LUPI(X_train, X_star, y_train, X_test, regMethod = 'KRR', n_splits=
     return testPred
 
 
-X, y, x_star = data.load_energy_data()
+X, x_star,y = data.load_energy_data()
+iter = 2
+rmseSVM = np.zeros(iter)
+rmseSVM_PI = np.zeros(iter)
+rmseKT_LUPI = np.zeros(iter)
+rmseRobustKT_LUPI = np.zeros(iter)
 
+pt = PrettyTable()
+pt.field_names = ["Dataset", "SVM", "SVM with PI", "KT LUPI",
+"Robust KT LUPI"]
 
-X_train, X_test, y_train, y_test, train_index, test_index = \
-    train_test_split(X, y, range(len(X)),test_size=.2)
-x_star_train = x_star[train_index]
-x_star_test = x_star[test_index]
+for i in range(iter):
+    X_train, X_test, y_train, y_test, train_index, test_index = \
+        train_test_split(X, y, range(len(X)),test_size=.2)
+    x_star_train = x_star[train_index]
+    x_star_test = x_star[test_index]
 
-scaler = StandardScaler()
-scaler.fit(X_train)
-X_train = scaler.transform(X_train)
-X_test = scaler.transform(X_test)
-
-if 1:
-    y_predicted = fit_SVR(X_train, y_train, X_test)
-    rmse = util.compute_rmse(y_test, y_predicted)
-    print("SVM Result:")
-    print(rmse)
-
-    X_mod = np.column_stack((X_train, x_star_train))
-    X_test_mod = np.column_stack((X_test, x_star_test))
     scaler = StandardScaler()
-    scaler.fit(X_mod)
-    X_mod = scaler.transform(X_mod)
-    X_test_mod = scaler.transform(X_test_mod)
+    scaler.fit(X_train)
+    X_train = scaler.transform(X_train)
+    X_test = scaler.transform(X_test)
 
-    y_predicted = fit_SVR(X_mod, y_train, X_test_mod)
-    rmse = util.compute_rmse(y_test, y_predicted)
-    print("SVM with extra features Result:")
-    print(rmse)
+    if 1:
+        y_predicted = fit_SVR(X_train, y_train, X_test)
+        rmseSVM[i] = util.compute_rmse(y_test, y_predicted)
+        print("SVM Result:")
+        print(rmseSVM[i])
 
-if 1:
-    y_predicted = KT_LUPI(X_train, y_train, x_star_train, X_test, regMethod='KRR')
-    rmse = util.compute_rmse(y_test, y_predicted)
-    print("Knowledge Transfer LUPI Result:")
-    print(rmse)
+        X_mod = np.column_stack((X_train, x_star_train))
+        X_test_mod = np.column_stack((X_test, x_star_test))
+        scaler = StandardScaler()
+        scaler.fit(X_mod)
+        X_mod = scaler.transform(X_mod)
+        X_test_mod = scaler.transform(X_test_mod)
 
-if 1:
-    y_predicted = RobustKT_LUPI(X_train, x_star_train, y_train, X_test, regMethod='KRR')
-    rmse = util.compute_rmse(y_test, y_predicted)
-    print("Robust Knowledge Transfer LUPI Result:")
-    print(rmse)
+        y_predicted = fit_SVR(X_mod, y_train, X_test_mod)
+        rmseSVM_PI[i] = util.compute_rmse(y_test, y_predicted)
+        print("SVM with extra features Result:")
+        print(rmseSVM_PI[i])
 
+    if 1:
+        y_predicted = KT_LUPI(X_train, y_train, x_star_train, X_test, regMethod='KRR')
+        rmseKT_LUPI[i] = util.compute_rmse(y_test, y_predicted)
+        print("Knowledge Transfer LUPI Result:")
+        print(rmseKT_LUPI[i])
+
+    if 1:
+        y_predicted = RobustKT_LUPI(X_train, x_star_train, y_train, X_test, regMethod='KRR')
+        rmseRobustKT_LUPI[i] = util.compute_rmse(y_test, y_predicted)
+        print("Robust Knowledge Transfer LUPI Result:")
+        print(rmseRobustKT_LUPI[i])
+
+pt.add_row(["Energy", np.mean(rmseSVM) , np.mean(rmseSVM_PI),
+            np.mean(rmseKT_LUPI), np.mean(rmseRobustKT_LUPI[i])])
+
+print(pt)

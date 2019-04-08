@@ -30,7 +30,7 @@ def fit_LinSVM(X_train, y_train, X_test):
 
 # fit LUPI with feature transformation using kernel ridge,
 def fit_KRR(X_train, x_star):
-    param_grid = {"alpha": [1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5],
+    param_grid = {"alpha": [1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8],
                   'kernel': ['rbf'], 'gamma': [.1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6]}
     model= GridSearchCV(KernelRidge(), cv=5, param_grid=param_grid)
     model.fit(X_train, x_star)

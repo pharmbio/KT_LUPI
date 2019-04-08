@@ -28,7 +28,6 @@ def fit_LinSVM(X_train, y_train, X_test):
     return testPred
 
 # fit LUPI with feature transformation using kernel ridge,
-# when we have only one privileged feature
 def fit_KRR(X_train, x_star):
     param_grid = {"alpha": [1e0, 1e-1, 1e-2, 1e-3],
                   'kernel': ['rbf'], 'gamma': [.1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6]}
@@ -36,17 +35,26 @@ def fit_KRR(X_train, x_star):
     model.fit(X_train, x_star)
     return model
 
-def KT_LUPI(X_train, y_train, y_train_label, X_test):
-    #gp_kernel = PairwiseKernel(metric= 'rbf')
+# fit LUPI with feature transformation using Gaussian process regression
+def fit_GPR(X_train, x_star):
+    gp_kernel = PairwiseKernel(metric= 'rbf')
+    model = GaussianProcessRegressor(kernel=gp_kernel)
+    model.fit(X_train, x_star)
+    return model
 
-    #gpr = GaussianProcessRegressor(kernel=gp_kernel)
-    #gpr.fit(X_train, y_train)
-    gpr = fit_KRR(X_train, y_train)
-    y_transform = gpr.predict(X_train)
-    y_test_transform = gpr.predict(X_test)
+
+def KT_LUPI(X_train, y_train, y_train_label, X_test, regMethod = 'KRR'):
+    if regMethod == 'GPR':
+        regModel = fit_GPR(X_train, y_train)
+    else:
+        regModel = fit_KRR(X_train, y_train)
+
+    y_transform = regModel.predict(X_train)
+    y_test_transform = regModel.predict(X_test)
     X = np.column_stack((X_train, y_transform))
     test_data = np.column_stack((X_test, y_test_transform))
 
+    # Construct the decision rule
     grid_param = [{'kernel': ['rbf'], 'gamma': [.1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6],
                    'C': [1, 10, 100, 1000]}]
 
@@ -56,7 +64,7 @@ def KT_LUPI(X_train, y_train, y_train_label, X_test):
     return testPred
 
 
-def RobustKT_LUPI(X_train, X_star, y_train_label, X_test, n_splits=3):
+def RobustKT_LUPI(X_train, X_star, y_train_label, X_test, regMethod = 'KRR', n_splits=3):
 
     kf = StratifiedKFold(n_splits=n_splits)
     testPred = np.zeros((len(X_test),2))
@@ -68,13 +76,13 @@ def RobustKT_LUPI(X_train, X_star, y_train_label, X_test, n_splits=3):
 
         # use part-2 for transfer
 
-        #gp_kernel = PairwiseKernel(metric= 'rbf')
-        #gpr = GaussianProcessRegressor(kernel=gp_kernel)
-        #gpr.fit(X_part2, X_star_2)
+        if regMethod == 'GPR':
+            regModel = fit_GPR(X_part2, X_star_2)
+        else:
+            regModel = fit_KRR(X_part2, X_star_2)
 
-        gpr = fit_KRR(X_part2, X_star_2)
-        X_star_train = gpr.predict(X_part1)
-        X_star_test = gpr.predict(X_test)
+        X_star_train = regModel.predict(X_part1)
+        X_star_test = regModel.predict(X_test)
         X = np.column_stack((X_part1, X_star_train))
         test_data = np.column_stack((X_test, X_star_test))
 
@@ -99,13 +107,7 @@ X, y, y_label = data.load_wine_data()
 #X, y, y_label = data.load_drug_discovery_data()
 
 
-X_train, X_test, y_train_label, y_test_label, train_index, test_index = \
-    train_test_split(X, y_label, range(len(X)),test_size=.8, stratify=y_label)
-y_train = y[train_index]
-y_test = y[test_index]
-print("train size", "test size")
-print(len(X_train), len(X_test))
-iter = 10
+iter = 2
 
 errRateSVM = np.zeros(iter)
 errRateSVM_PI = np.zeros(iter)
@@ -137,14 +139,14 @@ for i in range(iter):
 
 
     if 1:
-        y_predicted = KT_LUPI(X_train, y_train, y_train_label, X_test)
+        y_predicted = KT_LUPI(X_train, y_train, y_train_label, X_test, regMethod='GPR')
 
         print("Knowledge Transfer LUPI Error Rate:")
         errRateKT_LUPI[i] = util.compute_errorRate(y_test_label, y_predicted)
 
 
     if 1:
-        y_predicted = RobustKT_LUPI(X_train, y_train, y_train_label, X_test)
+        y_predicted = RobustKT_LUPI(X_train, y_train, y_train_label, X_test, regMethod='GPR')
 
         print("Robust KT LUPI Error Rate:")
         errRateRobustKT_LUPI[i] = util.compute_errorRate(y_test_label, y_predicted)

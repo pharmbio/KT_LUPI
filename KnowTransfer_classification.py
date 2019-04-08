@@ -8,6 +8,7 @@ import utils as util
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import PairwiseKernel
 from sklearn.model_selection import StratifiedKFold
+from prettytable import PrettyTable
 
 
 def fit_SVM(X_train, y_train, X_test):
@@ -71,7 +72,7 @@ def RobustKT_LUPI(X_train, X_star, y_train_label, X_test, n_splits=3):
         #gpr = GaussianProcessRegressor(kernel=gp_kernel)
         #gpr.fit(X_part2, X_star_2)
 
-        gpr = fit_KRR(X_train, y_train)
+        gpr = fit_KRR(X_part2, X_star_2)
         X_star_train = gpr.predict(X_part1)
         X_star_test = gpr.predict(X_test)
         X = np.column_stack((X_part1, X_star_train))
@@ -89,70 +90,69 @@ def RobustKT_LUPI(X_train, X_star, y_train_label, X_test, n_splits=3):
     return testPred
 
 
-def LUPI(X_train, y_train, y_train_label, X_test):
-    gp_kernel = PairwiseKernel(metric= 'rbf')
-    gpr = GaussianProcessRegressor(kernel=gp_kernel)
-    gpr.fit(X_train, y_train)
-    #y_transform = gpr.predict(X_train)
-    y_test_transform = gpr.predict(X_test)
-    #X = np.column_stack((X_train, y_transform))
-    X = np.column_stack((X_train, y_train))
-    test_data = np.column_stack((X_test, y_test_transform))
-
-    grid_param = [{'kernel': ['rbf'], 'gamma': [.1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6],
-                   'C': [1, 10, 100, 1000]}]
-
-    clf = GridSearchCV(SVC(), grid_param, cv=5)
-    clf.fit(X, y_train_label)
-    testPred = clf.predict(test_data)
-    return testPred
 
 # Using feature transformation for labels..
 #X, y, y_label = data.load_gridStability_data()
 #X, y, y_label = data.load_PD_data() # does not work
-#X, y, y_label = data.load_wine_data()
+X, y, y_label = data.load_wine_data()
 #X, y, y_label = data.load_wpbc_data() # not useful
-X, y, y_label = data.load_drug_discovery_data()
+#X, y, y_label = data.load_drug_discovery_data()
 
 
 X_train, X_test, y_train_label, y_test_label, train_index, test_index = \
-    train_test_split(X, y_label, range(len(X)),test_size=.2, stratify=y_label)
+    train_test_split(X, y_label, range(len(X)),test_size=.8, stratify=y_label)
 y_train = y[train_index]
 y_test = y[test_index]
 print("train size", "test size")
 print(len(X_train), len(X_test))
+iter = 10
 
-if 1:
-    y_predicted = fit_SVM(X_train, y_train_label, X_test)
-    print("SVM Error Rate:")
-    errRate = util.compute_errorRate(y_test_label, y_predicted)
-    print(errRate)
+errRateSVM = np.zeros(iter)
+errRateSVM_PI = np.zeros(iter)
+errRateKT_LUPI = np.zeros(iter)
+errRateRobustKT_LUPI = np.zeros(iter)
+
+pt = PrettyTable()
+
+pt.field_names = ["Dataset", "SVM", "SVM with PI", "KT LUPI",
+"Robust KT LUPI"]
+
+for i in range(iter):
+    X_train, X_test, y_train_label, y_test_label, train_index, test_index = \
+        train_test_split(X, y_label, range(len(X)), test_size=.8, stratify=y_label)
+    y_train = y[train_index]
+    y_test = y[test_index]
+
+    if 1:
+        y_predicted = fit_SVM(X_train, y_train_label, X_test)
+        print("SVM Error Rate:")
+        errRateSVM[i] = util.compute_errorRate(y_test_label, y_predicted)
+
+        # SVM with standard features and PI
+        X_train_mod = np.column_stack((X_train, y_train))
+        X_test_mod = np.column_stack((X_test, y_test))
+        y_predicted = fit_SVM(X_train_mod, y_train_label, X_test_mod)
+        print("SVM with extra features Error Rate:")
+        errRateSVM_PI[i] = util.compute_errorRate(y_test_label, y_predicted)
 
 
-    X = np.column_stack((X_train, y_train))
-    X_test_mod = np.column_stack((X_test, y_test))
-    y_predicted = fit_SVM(X, y_train_label, X_test_mod)
-    print("SVM with extra features Error Rate:")
-    errRate = util.compute_errorRate(y_test_label, y_predicted)
-    print(errRate)
+    if 1:
+        y_predicted = KT_LUPI(X_train, y_train, y_train_label, X_test)
 
-if 1:
-    y_predicted = KT_LUPI(X_train, y_train, y_train_label, X_test)
+        print("Knowledge Transfer LUPI Error Rate:")
+        errRateKT_LUPI[i] = util.compute_errorRate(y_test_label, y_predicted)
 
-    print("Knowledge Transfer LUPI Error Rate:")
-    errRate = util.compute_errorRate(y_test_label, y_predicted)
-    print(errRate)
 
-if 1:
-    y_predicted = RobustKT_LUPI(X_train, y_train, y_train_label, X_test)
+    if 1:
+        y_predicted = RobustKT_LUPI(X_train, y_train, y_train_label, X_test)
 
-    print("Robust KT LUPI Error Rate:")
-    errRate = util.compute_errorRate(y_test_label, y_predicted)
-    print(errRate)
+        print("Robust KT LUPI Error Rate:")
+        errRateRobustKT_LUPI[i] = util.compute_errorRate(y_test_label, y_predicted)
 
-if 0:
-    y_predicted = LUPI(X_train, y_train, y_train_label, X_test)
-    correct = sum(y_test_label == y_predicted)
-    print("LUPI without transformation while training Result:")
-    print(correct/len(y_test_label))
 
+
+
+pt.add_row(["Wine", np.mean(errRateSVM) , np.mean(errRateSVM_PI),
+            np.mean(errRateKT_LUPI), np.mean(errRateRobustKT_LUPI)])
+
+print(pt)

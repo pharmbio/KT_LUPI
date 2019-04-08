@@ -167,7 +167,7 @@ if 1:
     print(rmse)
 
 if 1:
-    y_predicted = KT_LUPI_KRR(X_train, y_train, x_star_train, X_test)
+    y_predicted = KT_LUPI(X_train, y_train, x_star_train, X_test, regMethod='KRR')
     rmse = util.compute_rmse(y_test, y_predicted)
     print("Knowledge Transfer LUPI Result:")
     print(rmse)

@@ -23,6 +23,7 @@ def load_drug_discovery_data():
 
     return X, y, y_label
 
+# multiple output dataset
 def load_energy_data():
     data = []
     # Read the training data

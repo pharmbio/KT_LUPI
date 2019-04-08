@@ -103,11 +103,11 @@ def RobustKT_LUPI(X_train, X_star, y_train_label, X_test, regMethod = 'KRR', n_s
 # Using feature transformation for labels..
 #X, y, y_label = data.load_gridStability_data()
 #X, y, y_label = data.load_PD_data() # does not work
-X, y, y_label = data.load_wine_data()
+#X, y, y_label = data.load_wine_data()
 #X, y, y_label = data.load_wpbc_data() # not useful
 #X, y, y_label = data.load_drug_discovery_data()
-
-
+X, y, y_label = data.load_energy_data()
+print(y_label[1:10])
 iter = 2
 
 errRateSVM = np.zeros(iter)
@@ -122,15 +122,15 @@ pt.field_names = ["Dataset", "SVM", "SVM with PI", "KT LUPI",
 
 for i in range(iter):
     X_train, X_test, y_train_label, y_test_label, train_index, test_index = \
-        train_test_split(X, y_label, range(len(X)), test_size=.25, stratify=y_label)
+        train_test_split(X, y_label, range(len(X)), test_size=.5, stratify=y_label)
     y_train = y[train_index]
     y_test = y[test_index]
 
     # normalization of the training data
     scaler = StandardScaler()
     scaler.fit(X_train)
-    x_train = scaler.transform(X_train)
-    x_test = scaler.transform(X_test)
+    X_train = scaler.transform(X_train)
+    X_test = scaler.transform(X_test)
 
     if 0:
         y_predicted = fit_SVM(X_train, y_train_label, X_test)
@@ -146,14 +146,14 @@ for i in range(iter):
 
 
     if 1:
-        y_predicted = KT_LUPI(X_train, y_train, y_train_label, X_test, regMethod='KRR')
+        y_predicted = KT_LUPI(X_train, y_train, y_train_label, X_test, regMethod='GPR')
 
         print("Knowledge Transfer LUPI Error Rate:")
         errRateKT_LUPI[i] = util.compute_errorRate(y_test_label, y_predicted)
         print(errRateKT_LUPI[i])
 
     if 1:
-        y_predicted = RobustKT_LUPI(X_train, y_train, y_train_label, X_test, regMethod='KRR')
+        y_predicted = RobustKT_LUPI(X_train, y_train, y_train_label, X_test, regMethod='GPR')
 
         print("Robust KT LUPI Error Rate:")
         errRateRobustKT_LUPI[i] = util.compute_errorRate(y_test_label, y_predicted)

@@ -9,6 +9,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import PairwiseKernel
 from sklearn.model_selection import StratifiedKFold
 from prettytable import PrettyTable
+from sklearn.preprocessing import StandardScaler
 
 
 def fit_SVM(X_train, y_train, X_test):
@@ -29,7 +30,7 @@ def fit_LinSVM(X_train, y_train, X_test):
 
 # fit LUPI with feature transformation using kernel ridge,
 def fit_KRR(X_train, x_star):
-    param_grid = {"alpha": [1e0, 1e-1, 1e-2, 1e-3],
+    param_grid = {"alpha": [1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5],
                   'kernel': ['rbf'], 'gamma': [.1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6]}
     model= GridSearchCV(KernelRidge(), cv=5, param_grid=param_grid)
     model.fit(X_train, x_star)
@@ -121,11 +122,17 @@ pt.field_names = ["Dataset", "SVM", "SVM with PI", "KT LUPI",
 
 for i in range(iter):
     X_train, X_test, y_train_label, y_test_label, train_index, test_index = \
-        train_test_split(X, y_label, range(len(X)), test_size=.8, stratify=y_label)
+        train_test_split(X, y_label, range(len(X)), test_size=.25, stratify=y_label)
     y_train = y[train_index]
     y_test = y[test_index]
 
-    if 1:
+    # normalization of the training data
+    scaler = StandardScaler()
+    scaler.fit(X_train)
+    x_train = scaler.transform(X_train)
+    x_test = scaler.transform(X_test)
+
+    if 0:
         y_predicted = fit_SVM(X_train, y_train_label, X_test)
         print("SVM Error Rate:")
         errRateSVM[i] = util.compute_errorRate(y_test_label, y_predicted)
@@ -139,18 +146,18 @@ for i in range(iter):
 
 
     if 1:
-        y_predicted = KT_LUPI(X_train, y_train, y_train_label, X_test, regMethod='GPR')
+        y_predicted = KT_LUPI(X_train, y_train, y_train_label, X_test, regMethod='KRR')
 
         print("Knowledge Transfer LUPI Error Rate:")
         errRateKT_LUPI[i] = util.compute_errorRate(y_test_label, y_predicted)
-
+        print(errRateKT_LUPI[i])
 
     if 1:
-        y_predicted = RobustKT_LUPI(X_train, y_train, y_train_label, X_test, regMethod='GPR')
+        y_predicted = RobustKT_LUPI(X_train, y_train, y_train_label, X_test, regMethod='KRR')
 
         print("Robust KT LUPI Error Rate:")
         errRateRobustKT_LUPI[i] = util.compute_errorRate(y_test_label, y_predicted)
-
+        print(errRateRobustKT_LUPI[i])
 
 
 

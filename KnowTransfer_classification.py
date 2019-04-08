@@ -1,6 +1,7 @@
 import dataPreprocess as data
 import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn.kernel_ridge import KernelRidge
 from sklearn.svm import SVC, LinearSVC
 from sklearn.model_selection import GridSearchCV
 import utils as util
@@ -25,12 +26,21 @@ def fit_LinSVM(X_train, y_train, X_test):
     testPred = clf.predict(X_test)
     return testPred
 
+# fit LUPI with feature transformation using kernel ridge,
+# when we have only one privileged feature
+def fit_KRR(X_train, x_star):
+    param_grid = {"alpha": [1e0, 1e-1, 1e-2, 1e-3],
+                  'kernel': ['rbf'], 'gamma': [.1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6]}
+    model= GridSearchCV(KernelRidge(), cv=5, param_grid=param_grid)
+    model.fit(X_train, x_star)
+    return model
 
 def KT_LUPI(X_train, y_train, y_train_label, X_test):
-    gp_kernel = PairwiseKernel(metric= 'rbf')
+    #gp_kernel = PairwiseKernel(metric= 'rbf')
 
-    gpr = GaussianProcessRegressor(kernel=gp_kernel)
-    gpr.fit(X_train, y_train)
+    #gpr = GaussianProcessRegressor(kernel=gp_kernel)
+    #gpr.fit(X_train, y_train)
+    gpr = fit_KRR(X_train, y_train)
     y_transform = gpr.predict(X_train)
     y_test_transform = gpr.predict(X_test)
     X = np.column_stack((X_train, y_transform))
@@ -56,9 +66,12 @@ def RobustKT_LUPI(X_train, X_star, y_train_label, X_test, n_splits=3):
         X_star_1, X_star_2= X_star[index1], X_star[index2]
 
         # use part-2 for transfer
-        gp_kernel = PairwiseKernel(metric= 'rbf')
-        gpr = GaussianProcessRegressor(kernel=gp_kernel)
-        gpr.fit(X_part2, X_star_2)
+
+        #gp_kernel = PairwiseKernel(metric= 'rbf')
+        #gpr = GaussianProcessRegressor(kernel=gp_kernel)
+        #gpr.fit(X_part2, X_star_2)
+
+        gpr = fit_KRR(X_train, y_train)
         X_star_train = gpr.predict(X_part1)
         X_star_test = gpr.predict(X_test)
         X = np.column_stack((X_part1, X_star_train))
@@ -97,11 +110,13 @@ def LUPI(X_train, y_train, y_train_label, X_test):
 # Using feature transformation for labels..
 #X, y, y_label = data.load_gridStability_data()
 #X, y, y_label = data.load_PD_data() # does not work
-X, y, y_label = data.load_wine_data()
+#X, y, y_label = data.load_wine_data()
 #X, y, y_label = data.load_wpbc_data() # not useful
+X, y, y_label = data.load_drug_discovery_data()
+
 
 X_train, X_test, y_train_label, y_test_label, train_index, test_index = \
-    train_test_split(X, y_label, range(len(X)),test_size=.2, random_state=3, stratify=y_label)
+    train_test_split(X, y_label, range(len(X)),test_size=.2, stratify=y_label)
 y_train = y[train_index]
 y_test = y[test_index]
 print("train size", "test size")
@@ -117,8 +132,6 @@ if 1:
     X = np.column_stack((X_train, y_train))
     X_test_mod = np.column_stack((X_test, y_test))
     y_predicted = fit_SVM(X, y_train_label, X_test_mod)
-
-
     print("SVM with extra features Error Rate:")
     errRate = util.compute_errorRate(y_test_label, y_predicted)
     print(errRate)

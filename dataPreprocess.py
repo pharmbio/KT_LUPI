@@ -11,7 +11,17 @@ from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 from pydataset import data
 from sklearn.datasets import load_boston
+import fileUtils.csrFormat as csr
 
+
+
+def load_drug_discovery_data():
+    X, y = csr.readCSRFile("DDdatasets/Cathepsin_D_regr.precomp.csr", delimiter=' ')
+    y_label = np.array(y)
+    y_label[y_label <= 10000] = -1
+    y_label[y_label > 10000] = 1
+
+    return X, y, y_label
 
 def load_energy_data():
     data = []
@@ -160,6 +170,7 @@ def load_wpbc_data():
     return X, y, y_label
 
 if __name__ == '__main__':
-    X, y, y_label = load_wpbc_data()
+    #X, y, y_label = load_wpbc_data()
+    X, y, y_label = load_drug_discovery_data()
     print(y[1:10])
     print(y_label[1:10])

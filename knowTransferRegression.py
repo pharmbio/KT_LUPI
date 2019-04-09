@@ -13,7 +13,8 @@ from sklearn.gaussian_process.kernels import PairwiseKernel
 from prettytable import PrettyTable
 
 
-# fit SVR
+# fit SVR on training and predict on test
+# return the prediction
 def fit_SVR(X_train, y_train, testData):
     grid_param = [{'kernel': ['rbf'], 'gamma': [.1,1e-2, 1e-3, 1e-4, 1e-5, 1e-6],
                    'C': [1, 10, 100, 1000]}]
@@ -24,35 +25,6 @@ def fit_SVR(X_train, y_train, testData):
     return testPred
     print("fit SVR done")
 
-
-
-
-
-# fit LUPI with feature transformation using GPR, when we have only one
-# privileged feature
-def KT_LUPI_GPR(X_train, y_train, x_star, X_test):
-    #gp_kernel = PairwiseKernel(metric= 'rbf')
-    #gp_kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
-    gp_kernel = RBF()
-    gpr = GaussianProcessRegressor(kernel=gp_kernel)
-    gpr.fit(X_train, x_star)
-    y_transform = gpr.predict(X_train)
-    y_test_transform = gpr.predict(X_test)
-    X_mod = np.column_stack((X_train, y_transform))
-    X_test_mod = np.column_stack((X_test, y_test_transform))
-
-    scaler = StandardScaler()
-    scaler.fit(X_mod)
-    X_mod = scaler.transform(X_mod)
-    X_test_mod = scaler.transform(X_test_mod)
-
-    grid_param = [{'kernel': ['rbf'], 'gamma': [.1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6],
-                   'C': [1, 10, 100, 1000]}]
-
-    clf = GridSearchCV(SVR(), grid_param, cv=5)
-    clf.fit(X_mod, y_train)
-    testPred = clf.predict(X_test_mod)
-    return testPred
 
 # fit LUPI with feature transformation using kernel ridge,
 def fit_KRR(X_train, x_star):
@@ -96,9 +68,8 @@ def KT_LUPI(X_train, y_train, x_star, X_test, regMethod='KRR'):
     return testPred
 
 
-
+# fit LUPI with  robust knowledge transformation, we have only one privileged feature
 def RobustKT_LUPI(X_train, X_star, y_train, X_test, regMethod = 'KRR', n_splits=5):
-
     kf = KFold(n_splits=n_splits)
     testPred = np.zeros(len(X_test))
 
@@ -137,7 +108,7 @@ def RobustKT_LUPI(X_train, X_star, y_train, X_test, regMethod = 'KRR', n_splits=
 
 
 X, x_star,y = data.load_energy_data()
-iter = 2
+iter = 5
 rmseSVM = np.zeros(iter)
 rmseSVM_PI = np.zeros(iter)
 rmseKT_LUPI = np.zeros(iter)

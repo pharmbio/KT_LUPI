@@ -1,6 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.gaussian_process import GaussianProcessRegressor
@@ -10,7 +8,7 @@ from sklearn.model_selection import GridSearchCV
 import utils as util
 
 
-# fit SVR
+# fit SVR on training and predict for test data
 def fit_SVR(X_train, y_train, testData):
     grid_param = [{'kernel': ['rbf'], 'gamma': [.1,1e-2, 1e-3, 1e-4, 1e-5, 1e-6],
                    'C': [1, 10, 100, 1000]}]

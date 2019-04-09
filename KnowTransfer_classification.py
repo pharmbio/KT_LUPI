@@ -52,16 +52,21 @@ def KT_LUPI(X_train, y_train, y_train_label, X_test, regMethod = 'KRR'):
 
     y_transform = regModel.predict(X_train)
     y_test_transform = regModel.predict(X_test)
-    X = np.column_stack((X_train, y_transform))
-    test_data = np.column_stack((X_test, y_test_transform))
+    X_mod = np.column_stack((X_train, y_transform))
+    X_test_mod = np.column_stack((X_test, y_test_transform))
+
+    scaler = StandardScaler()
+    scaler.fit(X_mod)
+    X_mod = scaler.transform(X_mod)
+    X_test_mod = scaler.transform(X_test_mod)
 
     # Construct the decision rule
     grid_param = [{'kernel': ['rbf'], 'gamma': [.1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6],
                    'C': [1, 10, 100, 1000]}]
 
     clf = GridSearchCV(SVC(), grid_param, cv=5)
-    clf.fit(X, y_train_label)
-    testPred = clf.predict(test_data)
+    clf.fit(X_mod, y_train_label)
+    testPred = clf.predict(X_test_mod)
     return testPred
 
 
@@ -84,15 +89,20 @@ def RobustKT_LUPI(X_train, X_star, y_train_label, X_test, regMethod = 'KRR', n_s
 
         X_star_train = regModel.predict(X_part1)
         X_star_test = regModel.predict(X_test)
-        X = np.column_stack((X_part1, X_star_train))
-        test_data = np.column_stack((X_test, X_star_test))
+        X_mod = np.column_stack((X_part1, X_star_train))
+        X_test_mod = np.column_stack((X_test, X_star_test))
+
+        scaler = StandardScaler()
+        scaler.fit(X_mod)
+        X_mod = scaler.transform(X_mod)
+        X_test_mod = scaler.transform(X_test_mod)
 
         grid_param = [{'kernel': ['rbf'], 'gamma': [.1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6],
                    'C': [1, 10, 100, 1000]}]
 
         clf = GridSearchCV(SVC(probability=True), grid_param, cv=5)
-        clf.fit(X, y_part1)
-        testPred = testPred + clf.predict_proba(test_data)
+        clf.fit(X_mod, y_part1)
+        testPred = testPred + clf.predict_proba(X_test_mod)
 
     testPred = testPred/n_splits
     testPred = np.argmax(testPred, axis=1)
@@ -103,12 +113,12 @@ def RobustKT_LUPI(X_train, X_star, y_train_label, X_test, regMethod = 'KRR', n_s
 # Using feature transformation for labels..
 #X, y, y_label = data.load_gridStability_data()
 #X, y, y_label = data.load_PD_data() # does not work
-#X, y, y_label = data.load_wine_data()
+X, y, y_label = data.load_wine_data()
 #X, y, y_label = data.load_wpbc_data() # not useful
 #X, y, y_label = data.load_drug_discovery_data()
-X, y, y_label = data.load_energy_data()
-print(y_label[1:10])
-iter = 2
+
+
+iter = 5
 
 errRateSVM = np.zeros(iter)
 errRateSVM_PI = np.zeros(iter)
@@ -122,7 +132,7 @@ pt.field_names = ["Dataset", "SVM", "SVM with PI", "KT LUPI",
 
 for i in range(iter):
     X_train, X_test, y_train_label, y_test_label, train_index, test_index = \
-        train_test_split(X, y_label, range(len(X)), test_size=.5, stratify=y_label)
+        train_test_split(X, y_label, range(len(X)), test_size=.2, stratify=y_label)
     y_train = y[train_index]
     y_test = y[test_index]
 
@@ -132,7 +142,7 @@ for i in range(iter):
     X_train = scaler.transform(X_train)
     X_test = scaler.transform(X_test)
 
-    if 0:
+    if 1:
         y_predicted = fit_SVM(X_train, y_train_label, X_test)
         print("SVM Error Rate:")
         errRateSVM[i] = util.compute_errorRate(y_test_label, y_predicted)
@@ -140,20 +150,26 @@ for i in range(iter):
         # SVM with standard features and PI
         X_train_mod = np.column_stack((X_train, y_train))
         X_test_mod = np.column_stack((X_test, y_test))
+        scaler = StandardScaler()
+        scaler.fit(X_train_mod)
+        X_train_mod = scaler.transform(X_train_mod)
+        X_test_mod = scaler.transform(X_test_mod)
+
         y_predicted = fit_SVM(X_train_mod, y_train_label, X_test_mod)
         print("SVM with extra features Error Rate:")
         errRateSVM_PI[i] = util.compute_errorRate(y_test_label, y_predicted)
 
 
     if 1:
-        y_predicted = KT_LUPI(X_train, y_train, y_train_label, X_test, regMethod='GPR')
+        y_predicted = KT_LUPI(X_train, y_train, y_train_label, X_test, regMethod='KRR')
 
         print("Knowledge Transfer LUPI Error Rate:")
         errRateKT_LUPI[i] = util.compute_errorRate(y_test_label, y_predicted)
         print(errRateKT_LUPI[i])
 
     if 1:
-        y_predicted = RobustKT_LUPI(X_train, y_train, y_train_label, X_test, regMethod='GPR')
+        y_predicted = RobustKT_LUPI(X_train, y_train, y_train_label, X_test,
+                                    regMethod='KRR', n_splits=5)
 
         print("Robust KT LUPI Error Rate:")
         errRateRobustKT_LUPI[i] = util.compute_errorRate(y_test_label, y_predicted)

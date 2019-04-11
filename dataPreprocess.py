@@ -45,7 +45,52 @@ def load_energy_data():
     return X, y, x_star
 
 
+def load_ionosphere_data():
+    data = []
+    # Read the training data
+    file = open('data/ionosphere.data')
+    reader = csv.reader(file)
 
+    for row in reader:
+        data.append(row)
+    file.close()
+
+    X = np.array([x[:-1] for x in data]).astype(np.float)
+    print(X.shape)
+    y = np.array([x[-1] for x in data])
+    #x_star = np.array([x[-1] for x in data]).astype(np.float)
+    y[y=='g'] = 1
+    y[y == 'b'] = 0
+    y = y.astype(int)
+    x_star = X[:,[4,5,20,21]]
+    X = np.delete(X, np.s_[4,5,20,21], axis= 1)
+    del data # free up the memory
+    #X = preprocessing.scale(X)
+    return X, y, x_star
+
+
+def load_kc2_data():
+    data = []
+    # Read the training data
+    file = open('data/kc2_csv.csv')
+    reader = csv.reader(file)
+    next(reader, None)  # skip the headers
+    for row in reader:
+        data.append(row)
+    file.close()
+
+    X = np.array([x[:-1] for x in data]).astype(np.float)
+    print(X.shape)
+    y = np.array([x[-1] for x in data])
+
+    y[y=='yes'] = 1
+    y[y == 'no'] = 0
+    y = y.astype(int)
+    x_star = X[:,[14,15,16,17,18,19,20]]
+    X = np.delete(X, np.s_[[14,15,16,17,18,19,20]], axis= 1)
+    del data # free up the memory
+
+    return X, y, x_star
 
 # comment: SCP works fine with wine data
 def load_wine_data():
@@ -172,6 +217,9 @@ def load_wpbc_data():
 
 if __name__ == '__main__':
     #X, y, y_label = load_wpbc_data()
-    X, y, y_label = load_drug_discovery_data()
+    #X, y, y_label = load_drug_discovery_data()
+    #X, y, x_star = load_ionosphere_data()
+    X, y, x_star = load_kc2_data()
+    print(X.shape)
+    print(x_star.shape)
     print(y[1:10])
-    print(y_label[1:10])

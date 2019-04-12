@@ -12,7 +12,7 @@ from sklearn.model_selection import train_test_split
 from pydataset import data
 from sklearn.datasets import load_boston
 import fileUtils.csrFormat as csr
-
+from sklearn.preprocessing import StandardScaler
 
 
 def load_drug_discovery_data():
@@ -82,12 +82,16 @@ def load_kc2_data():
     X = np.array([x[:-1] for x in data]).astype(np.float)
     print(X.shape)
     y = np.array([x[-1] for x in data])
-
+    '''
+    scaler = StandardScaler()
+    scaler.fit(X)
+    X = scaler.transform(X)
+    '''
     y[y=='yes'] = 1
     y[y == 'no'] = 0
     y = y.astype(int)
-    x_star = X[:,[14,15,16,17,18,19,20]]
-    X = np.delete(X, np.s_[[14,15,16,17,18,19,20]], axis= 1)
+    x_star = X[:,14:21]
+    X = X[:,0:14]
     del data # free up the memory
 
     return X, y, x_star

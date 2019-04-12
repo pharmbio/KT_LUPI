@@ -44,6 +44,35 @@ def load_energy_data():
     print(X.shape)
     return X, y, x_star
 
+def load_bc_data():
+    # Read the training data
+    # 5 features are area_mean, radius_se, texture_worst, compactness_worst, smoothness_worst.
+    bc = load_breast_cancer()
+    #print(bc.feature_names)
+    X, y = bc['data'], bc['target']
+
+    #X_star = X[:,[3,10]]
+    #X = np.delete(X, np.s_[3,10], axis= 1)
+    #features = bc.feature_names
+    sel_fetaures = [3, 10, 21, 24, 25]
+    X_star = X[:, sel_fetaures]
+    X = np.delete(X, np.s_[sel_fetaures], axis= 1)
+    return X, y, X_star
+
+
+def load_boston_data():
+    # Read the training data
+    boston = load_boston()
+    X, y = boston['data'], boston['target']
+
+    #X_star = X[:,[5,7]]
+    #X = np.delete(X, np.s_[5,7], axis= 1)
+
+    X_star = X[:,[1,3]]
+    X = np.delete(X, np.s_[1,3], axis= 1)
+
+    return X, y, X_star
+
 
 def load_ionosphere_data():
     data = []
@@ -223,7 +252,10 @@ if __name__ == '__main__':
     #X, y, y_label = load_wpbc_data()
     #X, y, y_label = load_drug_discovery_data()
     #X, y, x_star = load_ionosphere_data()
-    X, y, x_star = load_kc2_data()
+    #X, y, x_star = load_kc2_data()
+    #X, y, x_star = load_boston_data()
+    X, y, x_star = load_bc_data()
+    print(x_star[1:10])
     print(X.shape)
     print(x_star.shape)
     print(y[1:10])

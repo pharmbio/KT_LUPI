@@ -54,6 +54,7 @@ def load_bc_data():
     #X_star = X[:,[3,10]]
     #X = np.delete(X, np.s_[3,10], axis= 1)
     #features = bc.feature_names
+    #print(X.shape)
     sel_fetaures = [3, 10, 21, 24, 25]
     X_star = X[:, sel_fetaures]
     X = np.delete(X, np.s_[sel_fetaures], axis= 1)
@@ -248,14 +249,37 @@ def load_wpbc_data():
     print(X.shape)
     return X, y, y_label
 
+
+def load_concrete_data():
+    data = []
+    # Read the training data
+    file = open('data/Concrete_Data.csv')
+    reader = csv.reader(file)
+
+    for row in reader:
+        data.append(row)
+    file.close()
+
+    X = np.array([x[:-1] for x in data]).astype(np.float)
+    y = np.array([x[-1] for x in data]).astype(np.float)
+    del data # free up the memory
+
+    sel_fetaures = [6,7]
+    X_star = X[:, sel_fetaures]
+    X = np.delete(X, np.s_[sel_fetaures], axis=1)
+
+    return X, y, X_star
+
+
 if __name__ == '__main__':
     #X, y, y_label = load_wpbc_data()
     #X, y, y_label = load_drug_discovery_data()
     #X, y, x_star = load_ionosphere_data()
     #X, y, x_star = load_kc2_data()
     #X, y, x_star = load_boston_data()
-    X, y, x_star = load_bc_data()
-    print(x_star[1:10])
+    #X, y, x_star = load_bc_data()
+    X, y, x_star = load_concrete_data()
+    #print(x_star[1:10])
     print(X.shape)
     print(x_star.shape)
     print(y[1:10])

@@ -9,19 +9,16 @@ from sklearn.model_selection import GridSearchCV
 import utils as util
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import PairwiseKernel
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import KFold
 from prettytable import PrettyTable
 from sklearn.preprocessing import StandardScaler
 
-grid_param = {'C': [1, 10, 100, 1000],
-              "gamma": np.logspace(-6, 0, 10)}
+grid_param  = {'C': np.logspace(0, 3, 5),
+                "gamma": np.logspace(-8, 0, 20)}
 
 
 def fit_SVR(X_train, y_train, testData):
-    grid_param = [{'kernel': ['rbf'], 'gamma': [.1,1e-2, 1e-3, 1e-4, 1e-5, 1e-6],
-                   'C': [1, 10, 100, 1000]}]
-
-    clf = GridSearchCV(SVR(epsilon=0.05), grid_param, cv=5)
+    clf = GridSearchCV(SVR(kernel='rbf'), grid_param, cv=5)
     clf.fit(X_train, y_train)
     testPred = clf.predict(testData)
     return testPred
@@ -30,8 +27,8 @@ def fit_SVR(X_train, y_train, testData):
 
 # fit LUPI with feature transformation using kernel ridge,
 def fit_KRR(X_train, x_star):
-    param_grid = {"alpha": [1e-3, 1e-4, 1e-5, 1e-6, 1e-7],
-                  'kernel': ['rbf'], 'gamma': [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6]}
+    param_grid = {"alpha": np.logspace(-10, 0, 11),
+                  'kernel': ['rbf'], 'gamma': np.logspace(-10, 0, 11)}
     model= GridSearchCV(KernelRidge(), cv=5, param_grid=param_grid)
     model.fit(X_train, x_star)
     #print(model.best_estimator_.get_params())
@@ -68,28 +65,20 @@ def KT_LUPI(X_train, X_star, y_train_label, X_test, regMethod='KRR'):
             X_mod = np.column_stack((X_mod, y_transform))
             X_test_mod = np.column_stack((X_test_mod, y_test_transform))
 
-    '''
+
     scaler = StandardScaler()
     scaler.fit(X_mod)
     X_mod = scaler.transform(X_mod)
     X_test_mod = scaler.transform(X_test_mod)
 
-    # Construct the decision rule
-    grid_param = [{'kernel': ['rbf'], 'gamma': [.1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8],
-                   'C': [1, 10, 100, 1000]}]
-
-    clf = GridSearchCV(SVC(), grid_param, cv=5)
-    clf.fit(X_mod, y_train_label)
-    testPred = clf.predict(X_test_mod)
-    '''
     testPred = fit_SVR(X_mod, y_train_label, X_test_mod)
     return testPred
 
 
 def RobustKT_LUPI(X_train, X_star, y_train_label, X_test, regMethod='KRR', n_splits=3):
     n_pi = X_star.shape[1]  # numbe of privileged features
-    kf = StratifiedKFold(n_splits=n_splits)
-    testPred = np.zeros((len(X_test), 2))
+    kf = KFold(n_splits=n_splits)
+    testPred = np.zeros(len(X_test))
 
     for index1, index2 in kf.split(X_train, y_train_label):
         X_mod = None
@@ -117,29 +106,26 @@ def RobustKT_LUPI(X_train, X_star, y_train_label, X_test, regMethod='KRR', n_spl
                 X_mod = np.column_stack((X_mod, x_s_train))
                 X_test_mod = np.column_stack((X_test_mod, x_s_test))
 
-        '''
         scaler = StandardScaler()
         scaler.fit(X_mod)
         X_mod = scaler.transform(X_mod)
         X_test_mod = scaler.transform(X_test_mod)
 
-        grid_param = [{'kernel': ['rbf'], 'gamma': [.1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6],
-                   'C': [1, 10, 100, 1000]}]
-        '''
-        clf = GridSearchCV(SVC(probability=True), grid_param, cv=6)
+        clf = GridSearchCV(SVR(kernel='rbf'), grid_param, cv=5)
         clf.fit(X_mod, y_part1)
 
-        testPred = testPred + clf.predict_proba(X_test_mod)
+        testPred = testPred + clf.predict(X_test_mod)
 
     testPred = testPred / n_splits
-    testPred = np.argmax(testPred, axis=1)
     return testPred
 
 
 # Using feature transformation for labels..
-X, y, X_star  = data.load_boston_data()
+X, y, X_star  = data.load_concrete_data()
+#X, y, X_star  = data.load_boston_data()
 
-iter = 2
+
+iter = 1
 
 rmseSVM = np.zeros(iter)
 rmseSVM_PI = np.zeros(iter)
@@ -153,7 +139,7 @@ pt.field_names = ["Dataset", "SVM", "SVM with PI", "KT LUPI",
 
 for i in range(iter):
     X_train, X_test, y_train, y_test, train_index, test_index = \
-        train_test_split(X, y, range(len(X)), test_size=.25)
+        train_test_split(X, y, range(len(X)), test_size=.8)
     X_star_train = X_star[train_index]
     X_star_test = X_star[test_index]
     print("train size", "test size")
@@ -164,46 +150,46 @@ for i in range(iter):
     scaler.fit(X_train)
     X_train = scaler.transform(X_train)
     X_test = scaler.transform(X_test)
-
+    '''
     scaler = StandardScaler()
     scaler.fit(X_star_train)
     X_star_train = scaler.transform(X_star_train)
     X_star_test = scaler.transform(X_star_test)
-
+    '''
     if 1:
         y_predicted = fit_SVR(X_train, y_train, X_test)
         print("SVM Error Rate:")
-        rmseSVM[i] = util.compute_errorRate(y_test, y_predicted)
+        rmseSVM[i] = util.compute_rmse(y_test, y_predicted)
         print(rmseSVM[i])
 
         X_train_mod = np.column_stack((X_train, X_star_train))
         X_test_mod = np.column_stack((X_test, X_star_test))
-        # scaler = StandardScaler()
-        # scaler.fit(X_train_mod)
-        # X_train_mod = scaler.transform(X_train_mod)
-        # X_test_mod = scaler.transform(X_test_mod)
+        scaler = StandardScaler()
+        scaler.fit(X_train_mod)
+        X_train_mod = scaler.transform(X_train_mod)
+        X_test_mod = scaler.transform(X_test_mod)
         # print(X_train_mod.shape)
         y_predicted = fit_SVR(X_train_mod, y_train, X_test_mod)
         print("SVM with extra features Error Rate:")
-        rmseSVM_PI[i] = util.compute_errorRate(y_test, y_predicted)
+        rmseSVM_PI[i] = util.compute_rmse(y_test, y_predicted)
         print(rmseSVM_PI[i])
 
-    if 0:
+    if 1:
         y_predicted = KT_LUPI(X_train, X_star_train, y_train, X_test, regMethod='KRR')
 
         print("Knowledge Transfer LUPI Error Rate:")
-        rmseKT_LUPI[i] = util.compute_errorRate(y_test, y_predicted)
+        rmseKT_LUPI[i] = util.compute_rmse(y_test, y_predicted)
         print(rmseKT_LUPI[i])
 
-    if 0:
+    if 1:
         y_predicted = RobustKT_LUPI(X_train, X_star_train, y_train, X_test,
                                     regMethod='KRR', n_splits=5)
 
         print("Robust KT LUPI Error Rate:")
-        rmseRobustKT_LUPI[i] = util.compute_errorRate(y_test, y_predicted)
+        rmseRobustKT_LUPI[i] = util.compute_rmse(y_test, y_predicted)
         print(rmseRobustKT_LUPI[i])
 
-pt.add_row(["KC2", np.mean(rmseSVM), np.mean(rmseSVM_PI),
+pt.add_row(["concrete", np.mean(rmseSVM), np.mean(rmseSVM_PI),
             np.mean(rmseKT_LUPI), np.mean(rmseRobustKT_LUPI)])
 
 print(pt)

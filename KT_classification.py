@@ -14,7 +14,7 @@ from prettytable import PrettyTable
 from sklearn.preprocessing import StandardScaler
 
 grid_param  = {'C': np.logspace(-1, 3, 10),
-                "gamma": np.logspace(-6, 0, 20)}
+                "gamma": np.logspace(-8, 0, 20)}
 
 def fit_SVM(X_train, y_train, X_test):
     #grid_param = [{'kernel': ['rbf'], 'gamma': [.1, 1e-2, 1e-3, 1e-4],
@@ -35,8 +35,8 @@ def fit_LinSVM(X_train, y_train, X_test):
 
 # fit LUPI with feature transformation using kernel ridge,
 def fit_KRR(X_train, x_star):
-    param_grid = {"alpha": np.logspace(-6, 0, 20),
-                  'kernel': ['rbf'], 'gamma': np.logspace(-6, 0, 20)}
+    param_grid = {"alpha": np.logspace(-8, 0, 10),
+                  'kernel': ['rbf'], 'gamma': np.logspace(-8, 0, 10)}
     model= GridSearchCV(KernelRidge(), cv=6, param_grid=param_grid)
     model.fit(X_train, x_star)
     return model
@@ -201,14 +201,14 @@ for i in range(iter):
         errRateSVM_PI[i] = util.compute_errorRate(y_test_label, y_predicted)
         print(errRateSVM_PI[i])
 
-    if 1:
+    if 0:
         y_predicted = KT_LUPI(X_train, X_star_train, y_train_label, X_test, regMethod='KRR')
 
         print("Knowledge Transfer LUPI Error Rate:")
         errRateKT_LUPI[i] = util.compute_errorRate(y_test_label, y_predicted)
         print(errRateKT_LUPI[i])
 
-    if 1:
+    if 0:
         y_predicted = RobustKT_LUPI(X_train, X_star_train, y_train_label, X_test,
                                     regMethod='KRR', n_splits=5)
 

@@ -126,7 +126,6 @@ def load_kc2_data():
 
     return X, y, x_star
 
-# comment: SCP works fine with wine data
 def load_wine_data():
     data = []
     # Read the training data
@@ -139,26 +138,13 @@ def load_wine_data():
 
     X = np.array([x[:-2] for x in data]).astype(np.float)
     y = np.array([x[-2] for x in data]).astype(np.float)
-    y_label = np.array([x[-1] for x in data]).astype(np.float)
-    y_label = y_label.astype(int)
-
-    # consider only dataset with digits 2 and 3
-    y5 = y_label[y_label == 5]
-    y6 = y_label[y_label == 6]
-    X5 = X[y_label == 5]
-    X6 = X[y_label == 6]
-
-    y_label = np.concatenate((y5, y6))
-    y_label[y_label == 5] = 1
-    y_label[y_label == 6] = 0
-    X = np.concatenate((X5, X6), axis=0)
-    print(X.shape)
-
     del data # free up the memory
-    X = preprocessing.scale(X)
-    y = preprocessing.scale(y)
-    print(X.shape)
-    return X, y, y_label
+
+    sel_fetaures = [0, 1]
+    X_star = X[:, sel_fetaures]
+    X = np.delete(X, np.s_[sel_fetaures], axis=1)
+
+    return X, y, X_star
 
 
 # comments: SCP works, sometimes

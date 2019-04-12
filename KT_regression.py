@@ -121,9 +121,9 @@ def RobustKT_LUPI(X_train, X_star, y_train_label, X_test, regMethod='KRR', n_spl
 
 
 # Using feature transformation for labels..
-X, y, X_star  = data.load_concrete_data()
+#X, y, X_star  = data.load_concrete_data()
 #X, y, X_star  = data.load_boston_data()
-
+X, y, X_star = data.load_wine_data()
 
 iter = 1
 
@@ -188,6 +188,7 @@ for i in range(iter):
         print("Robust KT LUPI Error Rate:")
         rmseRobustKT_LUPI[i] = util.compute_rmse(y_test, y_predicted)
         print(rmseRobustKT_LUPI[i])
+
 
 pt.add_row(["concrete", np.mean(rmseSVM), np.mean(rmseSVM_PI),
             np.mean(rmseKT_LUPI), np.mean(rmseRobustKT_LUPI)])

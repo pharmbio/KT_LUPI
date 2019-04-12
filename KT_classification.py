@@ -13,7 +13,7 @@ from sklearn.model_selection import StratifiedKFold
 from prettytable import PrettyTable
 from sklearn.preprocessing import StandardScaler
 
-grid_param  = {'C': np.logspace(-1, 3, 10),
+grid_param  = {'C': np.logspace(0, 3, 10),
                 "gamma": np.logspace(-8, 0, 20)}
 
 def fit_SVM(X_train, y_train, X_test):
@@ -54,7 +54,7 @@ def fit_SVR(X_train, x_star):
     model.fit(X_train, x_star)
     return model
 
-def KT_LUPI(X_train, X_star, y_train_label, X_test, regMethod = 'SVR'):
+def KT_LUPI(X_train, X_star, y_train_label, X_test, regMethod = 'KRR'):
     n_pi = X_star.shape[1] #numbe of privileged features
     X_mod = None
     X_test_mod = None
@@ -64,8 +64,6 @@ def KT_LUPI(X_train, X_star, y_train_label, X_test, regMethod = 'SVR'):
 
         if regMethod == 'GPR':
             regModel = fit_GPR(X_train, x_s)
-        elif regMethod == 'SVR':
-            regModel = fit_SVR(X_train, x_s)
         else:
             regModel = fit_KRR(X_train, x_s)
 

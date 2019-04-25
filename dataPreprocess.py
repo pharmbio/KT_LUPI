@@ -140,11 +140,12 @@ def load_wine_data():
     y = np.array([x[-2] for x in data]).astype(np.float)
     del data # free up the memory
 
-    sel_fetaures = [0, 1]
+    sel_fetaures = [3, 4, 7]
     X_star = X[:, sel_fetaures]
     X = np.delete(X, np.s_[sel_fetaures], axis=1)
-
+    
     return X, y, X_star
+    #return X, y
 
 
 # comments: SCP works, sometimes
@@ -164,9 +165,17 @@ def load_PD_data():
     y_label = y_label.astype(int)
 
     del data # free up the memory
-    X = preprocessing.scale(X)
-    print(X.shape)
-    return X, y, y_label
+    #X = preprocessing.scale(X)
+    #print(X.shape)
+    #return X, y, y_label
+    #sel_fetaures = [10, 17, 15, 21, 14]
+    sel_fetaures = [21, 14]
+    X_star = X[:, sel_fetaures]
+    X = np.delete(X, np.s_[sel_fetaures], axis=1)
+
+    return X, y, X_star
+
+    #return X, y
 
 
 def load_gridStability_data():

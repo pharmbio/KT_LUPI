@@ -17,7 +17,7 @@ from collections import OrderedDict
 from collections import Counter
 
 
-grid_param  = {'C': np.logspace(0, 3, 5),
+grid_param  = {'C': np.logspace(-1, 3, 5),
                 "gamma": np.logspace(-8, 0, 20)}
 
 
@@ -36,13 +36,9 @@ def fit_LinearSVR(X_train, y_train, testData=None):
     print("fit Linear SVR done")
 
 
-def fit_SVR(X_train, y_train, testData=None):
+def fit_SVR(X_train, y_train, testData):
     clf = GridSearchCV(SVR(kernel='rbf'), grid_param, cv=5)
     clf.fit(X_train, y_train)
-
-    if testData is None:
-        return clf
-
     testPred = clf.predict(testData)
     return testPred
     print("fit SVR done")
@@ -57,15 +53,6 @@ def fit_RR(X_train, x_star):
     return model
 
 
-# fit LUPI with feature transformation using kernel ridge,
-def fit_KRR(X_train, x_star):
-    param_grid = {"alpha": np.logspace(-10, 0, 11),
-                  'kernel': ['rbf'], 'gamma': np.logspace(-10, 0, 11)}
-    model= GridSearchCV(KernelRidge(), cv=5, param_grid=param_grid)
-    model.fit(X_train, x_star)
-    #print(model.best_estimator_.get_params())
-    return model
-
 
 def KT_LUPI(X_train, X_star, y_train_label, X_test, regMethod='Linear'):
     n_pi = X_star.shape[1]  # numbe of privileged features
@@ -78,7 +65,7 @@ def KT_LUPI(X_train, X_star, y_train_label, X_test, regMethod='Linear'):
         if regMethod == 'Linear':
             regModel = fit_RR(X_train, x_s)
         else:
-            regModel = fit_KRR(X_train, x_s)
+            regModel = fit_LinearSVR(X_train, x_s)
 
         y_transform = regModel.predict(X_train)
         y_test_transform = regModel.predict(X_test)
@@ -120,7 +107,7 @@ def RobustKT_LUPI(X_train, X_star, y_train_label, X_test, regMethod='Linear', n_
             if regMethod == 'Linear':
                 regModel = fit_RR(X_part2, x_s)
             else:
-                regModel = fit_KRR(X_part2, x_s)
+                regModel = fit_LinearSVR(X_part2, x_s)
 
             x_s_train = regModel.predict(X_part1)
             x_s_test = regModel.predict(X_test)
@@ -177,12 +164,12 @@ def run_experiments(X_train, y_train, X_test, y_test,
         results["svm_pi"] = [util.compute_rmse(y_test, y_predicted)]
 
     if 1:
-        y_predicted = KT_LUPI(X_train, X_star_train, y_train, X_test, regMethod='nonLinear')
+        y_predicted = KT_LUPI(X_train, X_star_train, y_train, X_test)
 
         results["svm_kt_lupi"] = [util.compute_rmse(y_test, y_predicted)]
 
     if 1:
-        y_predicted = RobustKT_LUPI(X_train, X_star_train, y_train, X_test, regMethod='nonLinear')
+        y_predicted = RobustKT_LUPI(X_train, X_star_train, y_train, X_test)
         results["svm_robust_kt_lupi"] = [util.compute_rmse(y_test, y_predicted)]
 
     return results
@@ -191,11 +178,19 @@ def run_experiments(X_train, y_train, X_test, y_test,
 if __name__ == '__main__':
     # X, y, X_star  = data.load_concrete_data()
     # X, y, X_star  = data.load_boston_data()
-    X, y, X_star = data.load_wine_data()
+    #X, y, X_star = data.load_wine_data()
+    X, y, X_star = data.load_PD_data()
 
-    iter = 2
+    iter = 20
 
-    dataset_name = 'wine'
+    dataset_name = 'PD'
+
+    '''
+    rmseSVM = np.zeros(iter)
+    rmseSVM_PI = np.zeros(iter)
+    rmseKT_LUPI = np.zeros(iter)
+    rmseRobustKT_LUPI = np.zeros(iter)
+    '''
 
     rmseSVM = list()
     rmseSVM_PI = list()
@@ -207,15 +202,16 @@ if __name__ == '__main__':
     pt.field_names = ["Train Size", "SVM", "SVM with PI", "KT LUPI",
                       "Robust KT LUPI"]
 
-    #train_size = [200, 250, 300, 350]
-    train_size = [100, 200]
+    train_size = [200, 300, 400, 500, 600]
+    #train_size = [100, 200]
 
     dictResult = OrderedDict()
+    #counterResult = Counter()
     result = OrderedDict()
 
     for i in range(iter):
         X_remain, X_test, y_remain, y_test, train_index, test_index = \
-            train_test_split(X, y, range(len(X)), test_size=.8)
+            train_test_split(X, y, range(len(X)), test_size=.2)
         X_star_remain = X_star[train_index]
         X_star_test = X_star[test_index]
         print("train size", "test size")
@@ -231,6 +227,8 @@ if __name__ == '__main__':
             dictResult[n] = run_experiments(X_train, y_train, X_test, y_test,
                     X_star_train, X_star_test)
 
+
+        #results['{0}'.format(i)] = result
         for key, value in dictResult.items():
             if i==0:
                 result[key] = value
@@ -238,6 +236,9 @@ if __name__ == '__main__':
                 for key2, value2 in value.items():
                     result[key][key2].extend(value2) #concatenate lists
 
+        #counterResult = counterResult + Counter(dictResult)
+        #for key, value in result.items():
+        #    result[key] = value / iter
 
     import json
     file_name = dataset_name+".json"

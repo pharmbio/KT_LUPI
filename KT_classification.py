@@ -18,8 +18,14 @@ from sklearn.linear_model import RidgeCV, LinearRegression
 
 cv = 6
 
-grid_param  = {'C': np.logspace(-5, 5, 21, base = 2),
-                "gamma": np.logspace(-6, 6, 25, base = 2)}
+#grid_param  = {'C': np.logspace(-5, 5, 21, base = 2),
+#                "gamma": np.logspace(-6, 6, 25, base = 2)}
+
+#grid_param  = {'C': np.linspace(1/32, 32, 21),
+#               "gamma": np.linspace(1/64, 64, 25)}
+
+grid_param  = {'C': [1/32,1/16,1/8,1/4,1/2,1, 32,16,8,4,2,1],
+               "gamma": [1/64, 1/32,1/16,1/8,1/4,1/2,1, 64, 32,16,8,4,2,1]}
 
 def fit_SVM(X_train, y_train, X_test):
     #grid_param = [{'kernel': ['rbf'], 'gamma': [.1, 1e-2, 1e-3, 1e-4],

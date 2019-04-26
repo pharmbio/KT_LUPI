@@ -40,7 +40,7 @@ def mutual_info_rank_features(feature_vecs, binary_labels):
 if __name__ == "__main__":
     #X, y = data.load_wine_data()
     #X, y = data.load_PD_data()
-    X, y = data.load_parkinsons_data()
+    X, y = data.load_bc_data()
 
     print(X.shape)
     scaler = StandardScaler()

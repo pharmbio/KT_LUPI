@@ -50,12 +50,9 @@ def load_bc_data():
     bc = load_breast_cancer()
     #print(bc.feature_names)
     X, y = bc['data'], bc['target']
-
-    #X_star = X[:,[3,10]]
-    #X = np.delete(X, np.s_[3,10], axis= 1)
-    #features = bc.feature_names
-    #print(X.shape)
-    sel_fetaures = [3, 10, 21, 24, 25]
+    #return X, y
+    sel_fetaures = [0, 13, 3, 2, 6, 27, 20, 7, 22, 23]
+    #sel_fetaures = [27, 20, 7, 22, 23]
     X_star = X[:, sel_fetaures]
     X = np.delete(X, np.s_[sel_fetaures], axis= 1)
     return X, y, X_star
@@ -304,7 +301,7 @@ if __name__ == '__main__':
     #X, y, x_star = load_boston_data()
     #X, y, x_star = load_bc_data()
     #X, y, x_star = load_concrete_data()
-    X, y = load_parkinsons_data()
+    X, y = load_bc_data()
     #print(x_star[1:10])
     print(X.shape)
     #print(x_star.shape)

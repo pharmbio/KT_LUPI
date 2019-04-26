@@ -13,7 +13,7 @@ from sklearn.model_selection import StratifiedKFold
 from prettytable import PrettyTable
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Ridge
-from sklearn.linear_model import RidgeCV
+from sklearn.linear_model import RidgeCV, LinearRegression
 
 
 cv = 6
@@ -47,12 +47,17 @@ def fit_KRR(X_train, y_label):
     return model
 
 def fit_RR(X_train, y_label):
+    regression_model = LinearRegression()
+    # Fit the data(train the model)
+    regression_model.fit(X_train, y_label)
+
     #param_grid = {"alpha": np.logspace(-10, 0, 11, base = 2)}
-    model = RidgeCV(alphas=np.logspace(-10, 0, 10, base = 2), cv=cv).fit(X_train, y_label)
+    #model = RidgeCV(alphas=np.logspace(-10, 0, 10, base = 2), cv=cv).fit(X_train, y_label)
     #model= GridSearchCV(Ridge(), cv=cv, param_grid=param_grid)
     #model.fit(X_train, y_label)
     #print(model.best_estimator_.get_params())
-    return model
+    return regression_model
+
 
 # fit LUPI with feature transformation using Gaussian process regression
 def fit_GPR(X_train, x_star):

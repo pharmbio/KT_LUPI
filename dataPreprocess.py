@@ -168,14 +168,44 @@ def load_PD_data():
     #X = preprocessing.scale(X)
     #print(X.shape)
     #return X, y, y_label
-    #sel_fetaures = [10, 17, 15, 21, 14]
-    sel_fetaures = [21, 14]
+    sel_fetaures = [4, 1, 3, 0, 16]
+    #sel_fetaures = [11, 20, 19, 12, 7]
+    #sel_fetaures = [0, 16]
+
     X_star = X[:, sel_fetaures]
     X = np.delete(X, np.s_[sel_fetaures], axis=1)
 
     return X, y, X_star
 
     #return X, y
+
+
+# comments: SCP works, sometimes
+def load_parkinsons_data():
+    data = []
+    # Read the training data
+    file = open('data/parkinsons.data')
+    reader = csv.reader(file)
+    next(reader)  # skip the headers
+    for row in reader:
+        data.append(row)
+    file.close()
+
+    X = np.array([x[1:] for x in data]).astype(np.float)
+    y_label = np.array([x[-7] for x in data]).astype(np.float)
+    y_label = y_label.astype(int)
+
+    #delete label from the features
+    X = np.delete(X, -7, axis=1)
+
+    del data # free up the memory
+
+    #sel_fetaures = [19, 4, 10, 13, 9, 12, 11, 8, 21, 18]
+    sel_fetaures = [21, 18]
+    X_star = X[:, sel_fetaures]
+    X = np.delete(X, np.s_[sel_fetaures], axis=1)
+    return X, y_label, X_star
+
 
 
 def load_gridStability_data():
@@ -273,8 +303,9 @@ if __name__ == '__main__':
     #X, y, x_star = load_kc2_data()
     #X, y, x_star = load_boston_data()
     #X, y, x_star = load_bc_data()
-    X, y, x_star = load_concrete_data()
+    #X, y, x_star = load_concrete_data()
+    X, y = load_parkinsons_data()
     #print(x_star[1:10])
     print(X.shape)
-    print(x_star.shape)
+    #print(x_star.shape)
     print(y[1:10])

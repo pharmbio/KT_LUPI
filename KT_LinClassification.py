@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.linear_model import Ridge
-from sklearn.svm import SVR, LinearSVR
+from sklearn.svm import SVR, SVC, LinearSVR
 from sklearn.model_selection import GridSearchCV
 import utils as util
 from sklearn.gaussian_process import GaussianProcessRegressor
@@ -17,11 +17,19 @@ from collections import OrderedDict
 from collections import Counter
 
 
-grid_param  = {'C': np.logspace(-1, 3, 5),
-                "gamma": np.logspace(-8, 0, 20)}
+grid_param  = {'C': np.logspace(-5, 5, 21),
+                "gamma": np.logspace(-6, 6, 25)}
 
 
 linear_grid_param  = {'C': np.logspace(0, 3, 5)}
+
+
+def fit_SVM(X_train, y_train, X_test):
+    clf = GridSearchCV(SVC(kernel='rbf'), grid_param, cv=6)
+    clf.fit(X_train, y_train)
+    print(clf.best_params_)
+    testPred = clf.predict(X_test)
+    return testPred
 
 
 def fit_LinearSVR(X_train, y_train, testData=None):
@@ -83,7 +91,7 @@ def KT_LUPI(X_train, X_star, y_train_label, X_test, regMethod='Linear'):
     X_mod = scaler.transform(X_mod)
     X_test_mod = scaler.transform(X_test_mod)
 
-    testPred = fit_SVR(X_mod, y_train_label, X_test_mod)
+    testPred = fit_SVM(X_mod, y_train_label, X_test_mod)
 
     return testPred
 
@@ -124,7 +132,7 @@ def RobustKT_LUPI(X_train, X_star, y_train_label, X_test, regMethod='Linear', n_
         X_mod = scaler.transform(X_mod)
         X_test_mod = scaler.transform(X_test_mod)
 
-        clf = GridSearchCV(SVR(), grid_param, cv=5)
+        clf = GridSearchCV(SVC(), grid_param, cv=5)
         clf.fit(X_mod, y_part1)
 
         testPred = testPred + clf.predict(X_test_mod)
@@ -150,8 +158,8 @@ def run_experiments(X_train, y_train, X_test, y_test,
     results = OrderedDict()
 
     if 1:
-        y_predicted = fit_SVR(X_train, y_train, X_test)
-        results["svm"] = [util.compute_rmse(y_test, y_predicted)]
+        y_predicted = fit_SVM(X_train, y_train, X_test)
+        results["svm"] = [util.compute_errorRate(y_test, y_predicted)]
 
         X_train_mod = np.column_stack((X_train, X_star_train))
         X_test_mod = np.column_stack((X_test, X_star_test))
@@ -160,8 +168,8 @@ def run_experiments(X_train, y_train, X_test, y_test,
         X_train_mod = scaler.transform(X_train_mod)
         X_test_mod = scaler.transform(X_test_mod)
         # print(X_train_mod.shape)
-        y_predicted = fit_SVR(X_train_mod, y_train, X_test_mod)
-        results["svm_pi"] = [util.compute_rmse(y_test, y_predicted)]
+        y_predicted = fit_SVM(X_train_mod, y_train, X_test_mod)
+        results["svm_pi"] = [util.compute_errorRate(y_test, y_predicted)]
         print(results)
     if 0:
         y_predicted = KT_LUPI(X_train, X_star_train, y_train, X_test)
@@ -179,11 +187,11 @@ if __name__ == '__main__':
     # X, y, X_star  = data.load_concrete_data()
     # X, y, X_star  = data.load_boston_data()
     #X, y, X_star = data.load_wine_data()
-    X, y, X_star = data.load_PD_data()
+    X, y, X_star = data.load_parkinsons_data()
 
     iter = 1
 
-    dataset_name = 'PD'
+    dataset_name = 'parkinsons'
 
     '''
     rmseSVM = np.zeros(iter)
@@ -203,7 +211,7 @@ if __name__ == '__main__':
                       "Robust KT LUPI"]
 
     #train_size = [200, 300, 400, 500, 600]
-    train_size = [500]
+    train_size = [.25]
 
     dictResult = OrderedDict()
     #counterResult = Counter()
@@ -211,7 +219,7 @@ if __name__ == '__main__':
 
     for i in range(iter):
         X_remain, X_test, y_remain, y_test, train_index, test_index = \
-            train_test_split(X, y, range(len(X)), test_size=.2)
+            train_test_split(X, y, range(len(X)), test_size=.25)
         X_star_remain = X_star[train_index]
         X_star_test = X_star[test_index]
         print("iteration", i)

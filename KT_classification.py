@@ -46,8 +46,8 @@ def fit_LinSVM(X_train, y_train, X_test):
 
 # fit LUPI with feature transformation using kernel ridge,
 def fit_KRR(X_train, y_label):
-    param_grid = {"alpha": np.logspace(-8, 0, 10),
-                  'kernel': ['rbf'], 'gamma': np.logspace(-8, 0, 10, base = 2)}
+    param_grid = {"alpha": [1/64, 1/32,1/16,1/8,1/4,1/2,1, 64, 32,16,8,4,2,1],
+                  'kernel': ['rbf'], 'gamma': [1/64, 1/32,1/16,1/8,1/4,1/2,1, 64, 32,16,8,4,2,1]}
     model= GridSearchCV(KernelRidge(), cv=cv, param_grid=param_grid)
     model.fit(X_train, y_label)
     return model
@@ -168,8 +168,8 @@ def RobustKT_LUPI(X_train, X_star, y_train_label, X_test, regMethod = 'Linear', 
 
 #X, y_label, X_star = data.load_ionosphere_data()
 #X, y_label, X_star = data.load_kc2_data()
-#X, y_label, X_star = data.load_bc_data()
-X, y_label, X_star = data.load_parkinsons_data()
+X, y_label, X_star = data.load_bc_data()
+#X, y_label, X_star = data.load_parkinsons_data()
 
 iter = 1
 
@@ -241,7 +241,7 @@ for i in range(iter):
 
 
 
-pt.add_row(["Parkinsons", np.mean(errRateSVM) , np.mean(errRateSVM_PI),
+pt.add_row(["BC", np.mean(errRateSVM) , np.mean(errRateSVM_PI),
             np.mean(errRateKT_LUPI), np.mean(errRateRobustKT_LUPI)])
 
 print(pt)

@@ -18,52 +18,40 @@ from sklearn.linear_model import RidgeCV, LinearRegression
 
 cv = 6
 
-#grid_param  = {'C': np.logspace(-5, 5, 21, base = 2),
-#                "gamma": np.logspace(-6, 6, 25, base = 2)}
+gamma_param = [1/64, 1/32,1/16,1/8,1/4,1/2,1, 64, 32,16,8,4,2,1]
+C_param = [1/32,1/16,1/8,1/4,1/2,1, 32,16,8,4,2,1]
+alpha_param = [0.0001, 0.0003, 0.0006, 0.001, 0.003, 0.006, 0.01, 0.03, 0.06, 0.1,
+                                0.3, 0.6, 1]
 
-#grid_param  = {'C': np.linspace(1/32, 32, 21),
-#               "gamma": np.linspace(1/64, 64, 25)}
-
-grid_param  = {'C': [1/32,1/16,1/8,1/4,1/2,1, 32,16,8,4,2,1],
-               "gamma": [1/64, 1/32,1/16,1/8,1/4,1/2,1, 64, 32,16,8,4,2,1]}
+grid_param  = {'C': C_param, "gamma": gamma_param}
 
 def fit_SVM(X_train, y_train, X_test):
-    #grid_param = [{'kernel': ['rbf'], 'gamma': [.1, 1e-2, 1e-3, 1e-4],
-    #               'C': [.1, 1, 10, 100]}]
-
     clf = GridSearchCV(SVC(kernel='rbf'), grid_param, cv=cv)
     clf.fit(X_train, y_train)
     print(clf.best_params_)
     testPred = clf.predict(X_test)
     return testPred
 
-def fit_LinSVM(X_train, y_train, X_test):
-    grid_param = {'C': [1, 10, 100, 1000]}
-    clf = GridSearchCV(LinearSVC(), grid_param, cv=cv)
-    clf.fit(X_train, y_train)
-    testPred = clf.predict(X_test)
-    return testPred
 
 # fit LUPI with feature transformation using kernel ridge,
 def fit_KRR(X_train, y_label):
-    param_grid = {"alpha": [1/64, 1/32,1/16,1/8,1/4,1/2,1, 64, 32,16,8,4,2,1],
-                  'kernel': ['rbf'], 'gamma': [1/64, 1/32,1/16,1/8,1/4,1/2,1, 64, 32,16,8,4,2,1]}
+    param_grid = {"alpha": alpha_param,
+                  'kernel': ['rbf'],
+                  'gamma': gamma_param}
     model= GridSearchCV(KernelRidge(), cv=cv, param_grid=param_grid)
     model.fit(X_train, y_label)
     return model
 
-def fit_RR(X_train, y_label):
+def fit_MLR(X_train, y_label):
     regression_model = LinearRegression()
     # Fit the data(train the model)
     regression_model.fit(X_train, y_label)
-
-    #param_grid = {"alpha": np.logspace(-10, 0, 11, base = 2)}
-    #model = RidgeCV(alphas=np.logspace(-10, 0, 10, base = 2), cv=cv).fit(X_train, y_label)
-    #model= GridSearchCV(Ridge(), cv=cv, param_grid=param_grid)
-    #model.fit(X_train, y_label)
-    #print(model.best_estimator_.get_params())
     return regression_model
 
+def fit_RR(X_train, y_label):
+    model = RidgeCV(alphas=alpha_param, cv=cv).fit(X_train, y_label)
+    model.fit(X_train, y_label)
+    return model
 
 # fit LUPI with feature transformation using Gaussian process regression
 def fit_GPR(X_train, x_star):
@@ -72,11 +60,12 @@ def fit_GPR(X_train, x_star):
     model.fit(X_train, x_star)
     return model
 
-# fit LUPI with feature transformation using kernel ridge,
+# fit LUPI with feature transformation using SVR,
 def fit_SVR(X_train, x_star):
     model= GridSearchCV(SVR(kernel='rbf'), cv=cv, param_grid=grid_param)
     model.fit(X_train, x_star)
     return model
+
 
 def KT_LUPI(X_train, X_star, y_train_label, X_test, regMethod = 'Linear'):
     n_pi = X_star.shape[1] #numbe of privileged features
@@ -167,8 +156,8 @@ def RobustKT_LUPI(X_train, X_star, y_train_label, X_test, regMethod = 'Linear', 
 #X, y, y_label = data.load_drug_discovery_data()
 
 #X, y_label, X_star = data.load_ionosphere_data()
-#X, y_label, X_star = data.load_kc2_data()
-X, y_label, X_star = data.load_bc_data()
+X, y_label, X_star = data.load_kc2_data()
+#X, y_label, X_star = data.load_bc_data()
 #X, y_label, X_star = data.load_parkinsons_data()
 
 iter = 1
@@ -185,7 +174,7 @@ pt.field_names = ["Dataset", "SVM", "SVM with PI", "KT LUPI",
 
 for i in range(iter):
     X_train, X_test, y_train_label, y_test_label, train_index, test_index = \
-        train_test_split(X, y_label, range(len(X)), test_size=.25, stratify=y_label)
+        train_test_split(X, y_label, range(len(X)), test_size=.2)
     X_star_train = X_star[train_index]
     X_star_test = X_star[test_index]
     print("train size", "test size")
@@ -225,7 +214,7 @@ for i in range(iter):
         print(errRateSVM_PI[i])
 
     if 1:
-        y_predicted = KT_LUPI(X_train, X_star_train, y_train_label, X_test, regMethod='Linear')
+        y_predicted = KT_LUPI(X_train, X_star_train, y_train_label, X_test, regMethod='non-Linear')
 
         print("Knowledge Transfer LUPI Error Rate:")
         errRateKT_LUPI[i] = util.compute_errorRate(y_test_label, y_predicted)
@@ -233,7 +222,7 @@ for i in range(iter):
 
     if 1:
         y_predicted = RobustKT_LUPI(X_train, X_star_train, y_train_label, X_test,
-                                    regMethod='Linear', n_splits=5)
+                                    regMethod='Linear', n_splits=10)
 
         print("Robust KT LUPI Error Rate:")
         errRateRobustKT_LUPI[i] = util.compute_errorRate(y_test_label, y_predicted)

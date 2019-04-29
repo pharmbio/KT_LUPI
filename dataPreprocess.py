@@ -63,11 +63,9 @@ def load_boston_data():
     boston = load_boston()
     X, y = boston['data'], boston['target']
 
-    #X_star = X[:,[5,7]]
-    #X = np.delete(X, np.s_[5,7], axis= 1)
-
-    X_star = X[:,[1,3]]
-    X = np.delete(X, np.s_[1,3], axis= 1)
+    sel_fetaures = [10, 4, 2, 5, 12]
+    X_star = X[:, sel_fetaures]
+    X = np.delete(X, np.s_[sel_fetaures], axis=1)
 
     return X, y, X_star
 
@@ -197,8 +195,8 @@ def load_parkinsons_data():
 
     del data # free up the memory
 
-    #sel_fetaures = [19, 4, 10, 13, 9, 12, 11, 8, 21, 18]
-    sel_fetaures = [21, 18]
+    sel_fetaures = [19, 4, 10, 13, 9, 12, 11, 8, 21, 18]
+    #sel_fetaures = [21, 18]
     X_star = X[:, sel_fetaures]
     X = np.delete(X, np.s_[sel_fetaures], axis=1)
     return X, y_label, X_star
@@ -301,8 +299,15 @@ if __name__ == '__main__':
     #X, y, x_star = load_boston_data()
     #X, y, x_star = load_bc_data()
     #X, y, x_star = load_concrete_data()
-    X, y = load_bc_data()
+    #X, y = load_bc_data()
+    X, y, x_star = load_parkinsons_data()
     #print(x_star[1:10])
     print(X.shape)
+    print(x_star.shape)
+    X_train, X_test, y_train_label, y_test_label, train_index, test_index = \
+        train_test_split(X, y, range(len(X)), test_size=.2)
+    print(X_test.shape)
+    print(X_train.shape)
+
     #print(x_star.shape)
-    print(y[1:10])
+    #print(y[1:10])

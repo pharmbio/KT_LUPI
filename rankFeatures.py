@@ -1,4 +1,5 @@
 from sklearn.metrics import mutual_info_score
+from sklearn.feature_selection import  mutual_info_regression
 import dataPreprocess as data
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -37,15 +38,42 @@ def mutual_info_rank_features(feature_vecs, binary_labels):
     return ranked_indices
 
 
+
+def mutual_info_rank_features_regression(X, y):
+    """
+    Given a set of feature vectors and binary labels, return
+    the list of indices of the features ranked by mutual information
+    with the binary labels.
+    Args:
+        feature_vecs: list of feature vectors
+        binary_labels: list of binary labels
+    """
+    '''
+    mutual_infos = []
+    num_features = feature_vecs.shape[1]
+    for i in range(num_features):
+        row_i = feature_vecs[:,i]
+        mi = mutual_info_regression(row_i, y)
+        mutual_infos.append(mi)
+    '''
+    mutual_infos = mutual_info_regression(X, y)
+    num_features = X.shape[1]
+    ranked_indices = [index for (mi, index) in sorted(zip(mutual_infos, [x for x in range(num_features)]))]
+    return ranked_indices
+
+
+
+
 if __name__ == "__main__":
     #X, y = data.load_wine_data()
     #X, y = data.load_PD_data()
-    X, y = data.load_bc_data()
-
+    #X, y = data.load_bc_data()
+    X, y = data.load_boston_data()
     print(X.shape)
     scaler = StandardScaler()
     scaler.fit(X)
     X = scaler.transform(X)
 
-    ranked_indices = mutual_info_rank_features(X,y)
+    #ranked_indices = mutual_info_rank_features(X,y)
+    ranked_indices = mutual_info_rank_features_regression(X, y)
     print(ranked_indices)

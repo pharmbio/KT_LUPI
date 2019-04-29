@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-dataset_name = 'PD'
+dataset_name = 'synthetic'
 
 file_name = dataset_name+".json"
 with open(file_name ,'r') as fh:
@@ -37,6 +37,6 @@ for M, r in result.items():
     plt.xticks([0,1, 2, 3, 4],
                ['','SVM', 'SVM(all)', 'KT_LUPI', 'R_KT_LUPI'])
 
-    plt.show()
+    #plt.show()
 
 print(pt)

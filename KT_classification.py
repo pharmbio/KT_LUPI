@@ -14,14 +14,27 @@ from prettytable import PrettyTable
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Ridge
 from sklearn.linear_model import RidgeCV, LinearRegression
+import matplotlib.pyplot as plt
+from collections import OrderedDict
 
 
 cv = 6
 
-gamma_param = [1/64, 1/32,1/16,1/8,1/4,1/2,1, 64, 32,16,8,4,2,1]
-C_param = [1/32,1/16,1/8,1/4,1/2,1, 32,16,8,4,2,1]
-alpha_param = [0.0001, 0.0003, 0.0006, 0.001, 0.003, 0.006, 0.01, 0.03, 0.06, 0.1,
-                                0.3, 0.6, 1]
+# Params: for synthetic data and Parkinsons dataset
+gamma_param = [1/64, 1/32, 1/16, 1/8, 1/4, 1/2, 1, 2, 4, 8, 16, 32, 64]
+C_param = [1/32, 1/16, 1/8, 1/4, 1/2, 1, 2, 4, 8, 16, 32]
+alpha_param = [0.0001, 0.0003, 0.0006, 0.001, 0.003, 0.006, 0.01, 0.03,
+               0.06, 0.1, 0.3, 0.6, 1]
+
+# Params: for Ionosphere
+#gamma_param = [1/128, 1/64, 1/32, 1/16, 1/8, 1/4, 1/2]
+'''
+gamma_param = [.0001, .0005,.001,.005,.01,.05,.1,.5,1]
+C_param = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+alpha_param = [1e0, 0.1, 1e-2, 1e-3]
+'''
+
+
 
 grid_param  = {'C': C_param, "gamma": gamma_param}
 
@@ -76,7 +89,7 @@ def KT_LUPI(X_train, X_star, y_train_label, X_test, regMethod = 'Linear'):
         x_s = X_star[:,indexPI]
 
         if regMethod == 'Linear':
-            regModel = fit_RR(X_train, x_s)
+            regModel = fit_MLR(X_train, x_s)
         else:
             regModel = fit_KRR(X_train, x_s)
 
@@ -117,7 +130,7 @@ def RobustKT_LUPI(X_train, X_star, y_train_label, X_test, regMethod = 'Linear', 
             x_s = X_star_2[:, indexPI]
 
             if regMethod == 'Linear':
-                regModel = fit_RR(X_part2, x_s)
+                regModel = fit_MLR(X_part2, x_s)
             else:
                 regModel = fit_KRR(X_part2, x_s)
 
@@ -156,7 +169,7 @@ def RobustKT_LUPI(X_train, X_star, y_train_label, X_test, regMethod = 'Linear', 
 #X, y, y_label = data.load_drug_discovery_data()
 
 #X, y_label, X_star = data.load_ionosphere_data()
-X, y_label, X_star = data.load_kc2_data()
+#X, y_label, X_star = data.load_kc2_data()
 #X, y_label, X_star = data.load_bc_data()
 #X, y_label, X_star = data.load_parkinsons_data()
 
@@ -169,12 +182,22 @@ errRateRobustKT_LUPI = np.zeros(iter)
 
 pt = PrettyTable()
 
+dataset_name = 'parkinsons'
+    #['iono', 'kc2', 'parkinsons']
+data_path = OrderedDict()
+data_path["iono"] = data.load_ionosphere_data
+data_path["kc2"] = data.load_kc2_data
+data_path["parkinson"] = data.load_parkinsons_data
+
+
+X, y_label, X_star = data_path[dataset_name]()
+
 pt.field_names = ["Dataset", "SVM", "SVM with PI", "KT LUPI",
 "Robust KT LUPI"]
 
 for i in range(iter):
     X_train, X_test, y_train_label, y_test_label, train_index, test_index = \
-        train_test_split(X, y_label, range(len(X)), test_size=.2)
+        train_test_split(X, y_label, range(len(X)), test_size=.2, random_state=i)
     X_star_train = X_star[train_index]
     X_star_test = X_star[test_index]
     print("train size", "test size")
@@ -198,7 +221,7 @@ for i in range(iter):
         print("SVM Error Rate:")
         errRateSVM[i] = util.compute_errorRate(y_test_label, y_predicted)
         print(errRateSVM[i])
-
+    if 1:
         X_train_mod = np.column_stack((X_train, X_star_train))
         X_test_mod = np.column_stack((X_test, X_star_test))
 
@@ -214,7 +237,7 @@ for i in range(iter):
         print(errRateSVM_PI[i])
 
     if 1:
-        y_predicted = KT_LUPI(X_train, X_star_train, y_train_label, X_test, regMethod='non-Linear')
+        y_predicted = KT_LUPI(X_train, X_star_train, y_train_label, X_test, regMethod='Linear')
 
         print("Knowledge Transfer LUPI Error Rate:")
         errRateKT_LUPI[i] = util.compute_errorRate(y_test_label, y_predicted)
@@ -229,8 +252,30 @@ for i in range(iter):
         print(errRateRobustKT_LUPI[i])
 
 
+results = OrderedDict()
+results["svm"] = errRateSVM.tolist()
+results["svm_pi"] = errRateSVM_PI.tolist()
+results["svm_kt_lupi"] = errRateKT_LUPI.tolist()
+results["svm_robust_kt_lupi"] = errRateRobustKT_LUPI.tolist()
 
-pt.add_row(["BC", np.mean(errRateSVM) , np.mean(errRateSVM_PI),
+
+import json
+file_name = dataset_name+".json"
+with open(file_name, 'w') as fh:
+    fh.write(json.dumps(results))
+
+'''
+plt.ylim([0,0.2])
+#plt.boxplot(errRateSVM, positions=[1])
+#plt.boxplot(errRateSVM_PI, positions=[2])
+plt.boxplot(errRateKT_LUPI, positions=[1])
+plt.boxplot(errRateRobustKT_LUPI, positions=[2])
+plt.xticks([0,1, 2],
+           ['',"KT LUPI", "Robust KT LUPI"])
+
+plt.show()
+'''
+pt.add_row([dataset_name, np.mean(errRateSVM) , np.mean(errRateSVM_PI),
             np.mean(errRateKT_LUPI), np.mean(errRateRobustKT_LUPI)])
 
 print(pt)

@@ -11,7 +11,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import PairwiseKernel
 from sklearn.model_selection import StratifiedKFold
 from prettytable import PrettyTable
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.linear_model import Ridge
 from sklearn.linear_model import RidgeCV, LinearRegression
 import matplotlib.pyplot as plt
@@ -26,6 +26,9 @@ C_param = [1/32, 1/16, 1/8, 1/4, 1/2, 1, 2, 4, 8, 16, 32]
 alpha_param = [0.0001, 0.0003, 0.0006, 0.001, 0.003, 0.006, 0.01, 0.03,
                0.06, 0.1, 0.3, 0.6, 1]
 
+#scaler = StandardScaler()
+scaler = MinMaxScaler()
+
 # Params: for Ionosphere
 #gamma_param = [1/128, 1/64, 1/32, 1/16, 1/8, 1/4, 1/2]
 '''
@@ -34,7 +37,7 @@ C_param = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 alpha_param = [1e0, 0.1, 1e-2, 1e-3]
 '''
 
-
+alpha_param = np.array([1,0.1,0.01,0.001,0.0001,0])
 
 grid_param  = {'C': C_param, "gamma": gamma_param}
 
@@ -104,7 +107,7 @@ def KT_LUPI(X_train, X_star, y_train_label, X_test, regMethod = 'Linear'):
             X_test_mod = np.column_stack((X_test_mod, y_test_transform))
 
 
-    scaler = StandardScaler()
+    #scaler = StandardScaler()
     scaler.fit(X_mod)
     X_mod = scaler.transform(X_mod)
     X_test_mod = scaler.transform(X_test_mod)
@@ -145,7 +148,7 @@ def RobustKT_LUPI(X_train, X_star, y_train_label, X_test, regMethod = 'Linear', 
                 X_test_mod = np.column_stack((X_test_mod, x_s_test))
 
 
-        scaler = StandardScaler()
+        #scaler = StandardScaler()
         scaler.fit(X_mod)
         X_mod = scaler.transform(X_mod)
         X_test_mod = scaler.transform(X_test_mod)
@@ -173,7 +176,7 @@ def RobustKT_LUPI(X_train, X_star, y_train_label, X_test, regMethod = 'Linear', 
 #X, y_label, X_star = data.load_bc_data()
 #X, y_label, X_star = data.load_parkinsons_data()
 
-iter = 1
+iter = 10
 
 errRateSVM = np.zeros(iter)
 errRateSVM_PI = np.zeros(iter)
@@ -187,7 +190,7 @@ dataset_name = 'parkinsons'
 data_path = OrderedDict()
 data_path["iono"] = data.load_ionosphere_data
 data_path["kc2"] = data.load_kc2_data
-data_path["parkinson"] = data.load_parkinsons_data
+data_path["parkinsons"] = data.load_parkinsons_data
 
 
 X, y_label, X_star = data_path[dataset_name]()
@@ -204,7 +207,7 @@ for i in range(iter):
     print(X_train.shape, X_test.shape)
 
     # normalization of the training data
-    scaler = StandardScaler()
+    #scaler = StandardScaler()
     scaler.fit(X_train)
     X_train = scaler.transform(X_train)
     X_test = scaler.transform(X_test)
@@ -225,7 +228,7 @@ for i in range(iter):
         X_train_mod = np.column_stack((X_train, X_star_train))
         X_test_mod = np.column_stack((X_test, X_star_test))
 
-        scaler = StandardScaler()
+        #scaler = StandardScaler()
         scaler.fit(X_train_mod)
         X_train_mod = scaler.transform(X_train_mod)
         X_test_mod = scaler.transform(X_test_mod)
@@ -243,7 +246,7 @@ for i in range(iter):
         errRateKT_LUPI[i] = util.compute_errorRate(y_test_label, y_predicted)
         print(errRateKT_LUPI[i])
 
-    if 1:
+    if 0:
         y_predicted = RobustKT_LUPI(X_train, X_star_train, y_train_label, X_test,
                                     regMethod='Linear', n_splits=10)
 

@@ -58,7 +58,7 @@ def fit_RR(X_train, y_label):
     #print(model.best_estimator_.get_params())
 
 def KT_LUPI(X_train, X_star, y_train_label, X_test):
-    regModel = fit_RR(X_train, X_star)
+    regModel = fit_MLR(X_train, X_star)
 
     y_transform = regModel.predict(X_train)
     y_test_transform = regModel.predict(X_test)
@@ -91,7 +91,7 @@ def RobustKT_LUPI(X_train, X_star, y_train_label, X_test, n_splits=5):
 
         x_s = X_star_2[:] #X_star_2[:, indexPI]
 
-        regModel = fit_RR(X_part2, x_s)
+        regModel = fit_MLR(X_part2, x_s)
 
         x_s_train = regModel.predict(X_part1)
         x_s_test = regModel.predict(X_test)
@@ -131,21 +131,21 @@ def run_experiments(X_train, y_train, X_test, y_test,
     '''
     results = OrderedDict()
 
-    if 1:
+    if 0:
         y_predicted = fit_SVM(X_train, y_train, X_test)
         results["svm"] = [util.compute_errorRate(y_test, y_predicted)]
 
-
-        X_train_mod = np.column_stack((X_train, X_star_train))
-        X_test_mod = np.column_stack((X_test, X_star_test))
+    if 0:
+        #X_train_mod = np.column_stack((X_train, X_star_train))
+        #X_test_mod = np.column_stack((X_test, X_star_test))
 
         #scaler = StandardScaler()
         #scaler.fit(X_star_train.reshape(-1, 1))
         #X_train_mod = scaler.transform(X_star_train.reshape(-1, 1))
         #X_test_mod = scaler.transform(X_star_test.reshape(-1, 1))
 
-        #X_train_mod = X_star_train.reshape(-1, 1)
-        #X_test_mod = X_star_test.reshape(-1, 1)
+        X_train_mod = X_star_train.reshape(-1, 1)
+        X_test_mod = X_star_test.reshape(-1, 1)
         # print(X_train_mod.shape)
 
         y_predicted = fit_SVM(X_train_mod, y_train, X_test_mod)
@@ -165,7 +165,7 @@ def run_experiments(X_train, y_train, X_test, y_test,
 
 
 if __name__ == '__main__':
-    iter = 20
+    iter = 10
 
     dataset_name = 'synthetic'
 
@@ -230,4 +230,6 @@ if __name__ == '__main__':
 #pt.add_row(["concrete", np.mean(rmseSVM), np.mean(rmseSVM_PI),
 #            np.mean(rmseKT_LUPI), 'NA'])
     '''
+
+print(np.mean(rmseSVM_PI))
 #print(pt)

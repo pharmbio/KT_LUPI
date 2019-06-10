@@ -20,23 +20,23 @@ for M, r in result.items():
     rmseKT_LUPI = list()
     rmseRobustKT_LUPI = list()
 
-    rmseSVM.append(r['svm'])
-    rmseSVM_PI.append(r['svm_pi'])
+    #rmseSVM.append(r['svm'])
+    #rmseSVM_PI.append(r['svm_pi'])
     rmseKT_LUPI.append(r['svm_kt_lupi'])
     rmseRobustKT_LUPI.append(r['svm_robust_kt_lupi'])
     pt.add_row([M, np.mean(rmseSVM), np.mean(rmseSVM_PI),
                 np.mean(rmseKT_LUPI), np.mean(rmseRobustKT_LUPI)])
 
 
-    plt.xlim([0,5])
-    plt.ylim([0.5,2])
-    plt.boxplot(rmseSVM, positions=[1])
-    plt.boxplot(rmseSVM_PI, positions=[2])
-    plt.boxplot(rmseKT_LUPI, positions=[3])
-    plt.boxplot(rmseRobustKT_LUPI, positions=[4])
-    plt.xticks([0,1, 2, 3, 4],
-               ['','SVM', 'SVM(all)', 'KT_LUPI', 'R_KT_LUPI'])
+    plt.xlim([0,3])
+    #plt.ylim([0.5,2])
+    #plt.boxplot(rmseSVM, positions=[1])
+    #plt.boxplot(rmseSVM_PI, positions=[2])
+    plt.boxplot(rmseKT_LUPI, positions=[1])
+    plt.boxplot(rmseRobustKT_LUPI, positions=[2])
+    plt.xticks([0,1, 2],
+               ['','KT-LUPI', 'RKT-LUPI'])
 
-    #plt.show()
+    plt.show()
 
 print(pt)
